@@ -12,7 +12,7 @@ PASTA_SAIDA = 'documentos_gerados'
 VALOR_PADRAO_VAZIO = 'N/A' 
 COLUNA_TEMPLATE = 'NOME_DO_MODELO'      
 COLUNA_NOME_CLIENTE = 'CLIENTE'         
-COLUNA_NOME_DECLARACAO = 'DECLARACAO'   
+COLUNA_NOME_DOCUMENTO = 'DOCUMENTO'   
 COLUNA_NUMERO_PREGAO = 'NUMERO_PREGAO'  
 
 def limpar_nome_arquivo(texto):
@@ -53,7 +53,7 @@ def gerar_documentos():
             return
 
         # Verifica se as colunas críticas existem
-        colunas_criticas = [COLUNA_TEMPLATE, COLUNA_NOME_CLIENTE, COLUNA_NOME_DECLARACAO, COLUNA_NUMERO_PREGAO]
+        colunas_criticas = [COLUNA_TEMPLATE, COLUNA_NOME_CLIENTE, COLUNA_NOME_DOCUMENTO, COLUNA_NUMERO_PREGAO]
         for col in colunas_criticas:
             if col not in df.columns:
                  print(f"❌ ERRO CRÍTICO: Coluna '{col}' não encontrada na planilha. Verifique a ortografia.")
@@ -75,8 +75,8 @@ def gerar_documentos():
         
         nome_template_completo = str(dados_documentos.get(COLUNA_TEMPLATE))
         nome_cliente = str(dados_documentos.get(COLUNA_NOME_CLIENTE))
-        nome_declaracao = str(dados_documentos.get(COLUNA_NOME_DECLARACAO))
-        numero_pregao = str(dados_documentos.get(COLUNA_NUMERO_PREGAO)) # Novo valor
+        nome_documento = str(dados_documentos.get(COLUNA_NOME_DOCUMENTO))
+        numero_pregao = str(dados_documentos.get(COLUNA_NUMERO_PREGAO))
             
         caminho_template_completo = os.path.join(PASTA_TEMPLATES, nome_template_completo)
         
@@ -87,13 +87,13 @@ def gerar_documentos():
             doc_template.render(context)
             
             # --- 4. NOME DO ARQUIVO ---
-            nome_declaracao_limpo = limpar_nome_arquivo(nome_declaracao)
+            nome_documento_limpo = limpar_nome_arquivo(nome_documento)
             nome_cliente_limpo = limpar_nome_arquivo(nome_cliente)
             numero_pregao_limpo = limpar_nome_arquivo(numero_pregao) # Limpeza do Número do Pregão
-            nome_arquivo = f"{nome_declaracao_limpo}_{nome_cliente_limpo}_{numero_pregao_limpo}.docx"
+            nome_arquivo = f"{nome_documento_limpo}_{nome_cliente_limpo}_{numero_pregao_limpo}.docx"
             
             if numero_pregao_limpo == VALOR_PADRAO_VAZIO:
-                 nome_arquivo = f"{nome_declaracao_limpo}_{nome_cliente_limpo}.docx"
+                 nome_arquivo = f"{nome_documento_limpo}_{nome_cliente_limpo}.docx"
                         
             caminho_saida = os.path.join(PASTA_SAIDA, nome_arquivo)
             

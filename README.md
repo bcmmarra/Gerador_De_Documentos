@@ -1,6 +1,3 @@
-Certamente\! Aqui está o arquivo `README.md` completo, formatado em Markdown, para documentar seu projeto de automação no Git.
-
------
 
 # 📄 Automatizador de Documentos Word (DOCX) via Excel
 
@@ -32,10 +29,12 @@ source .venv/bin/activate
 
 ### 3\. Instalação das Dependências
 
-Com o ambiente virtual ativado, instale as bibliotecas necessárias:
+As dependências necessárias estão listadas no arquivo `requirements.txt` no projeto.
+
+Com o ambiente virtual ativado, instale as bibliotecas usando o `pip`:
 
 ```bash
-pip install pandas openpyxl docxtpl
+pip install -r requirements.txt
 ```
 
 ### 4\. Estrutura do Projeto
@@ -44,16 +43,18 @@ O script espera que a estrutura de pastas do projeto seja organizada da seguinte
 
 ```
 AUTOMATIZADORDOCUMENTOS/
-├── .venv/                         # Ambiente virtual (ignorar no Git)
+├── .venv/                              # Ambiente virtual (ignorar no Git)
 ├── dados/
-│   └── dados_documentos.xlsx      # Fonte de dados
-├── documentos_gerados/            # Pasta de SAÍDA (Criada automaticamente)
-├── modelos/                       # Pasta RAIZ que contém todos os templates
-│   └── modelosPadrao/             # Exemplo de Subpasta
-│       ├── CARTA PROPOSTA.docx    # Template
-│       └── REPRESENTANTE LEGAL.docx # Template
-├── gerarDocumentos.py             # Script principal
-└── README.md                      # Este arquivo
+│   └── dados_documentos.xlsx           # Fonte de dados
+├── documentos_gerados/                 # Pasta de SAÍDA (Criada automaticamente)
+├── modelos/                            # Pasta RAIZ que contém todos os templates
+│   └── modelosEdital/                  # Exemplo de Subpasta
+│   │   └── CARTA PROPOSTA.docx         # Template
+│   └── modelosPadrao/                  # Exemplo de Subpasta
+│       └── REPRESENTANTE LEGAL.docx    # Template
+├── gerarDocumentos.py                  # Script principal
+├── requirements.txt                    # Lista de dependências (já incluso)
+└── README.md                           # Este arquivo
 ```
 
 ### 5\. Configuração da Planilha (`dados_documentos.xlsx`)
@@ -64,9 +65,9 @@ As seguintes colunas são **obrigatórias** e usadas para a lógica do script:
 
 | Coluna Python | Nome no Excel | Função | Exemplo de Valor |
 | :--- | :--- | :--- | :--- |
-| `COLUNA_TEMPLATE` | **NOME\_DO\_MODELO** | Caminho relativo do template a ser usado, a partir da pasta `modelos/`. | `modelosPadrao/CARTA PROPOSTA.docx` |
+| `COLUNA_TEMPLATE` | **NOME\_DO\_MODELO** | **Caminho relativo** do template a ser usado, a partir da pasta `modelos/`. | `modelosPadrao/CARTA PROPOSTA.docx` |
 | `COLUNA_NOME_CLIENTE` | **CLIENTE** | Nome do cliente/usuário (Parte do nome do arquivo final). | `Policia Militar de Minas Gerais` |
-| `COLUNA_NOME_DECLARACAO` | **DECLARACAO** | Título do documento (Parte do nome do arquivo final). | `CARTA PROPOSTA` |
+| `COLUNA_NOME_DOCUMENTO` | **DOCUMENTO** | Título do documento (Parte do nome do arquivo final). | `CARTA PROPOSTA` |
 | `COLUNA_NUMERO_PREGAO` | **NUMERO\_PREGAO** | Número do Pregão (Parte do nome do arquivo final). | `9003/2025` |
 | (Outras Colunas) | *qualquer nome* | Variáveis que preencherão os *placeholders* no Word. | `{{VALOR_DA_PROPOSTA}}` |
 
@@ -93,11 +94,11 @@ O script irá:
 
 O nome do arquivo de saída é construído combinando três campos cruciais da planilha, garantindo organização:
 
-**`<DECLARACAO>_<CLIENTE>_<NUMERO_PREGAO>.docx`**
+**`<DOCUMENTO>_<CLIENTE>_<NUMERO_PREGAO>.docx`**
 
 ### Tratamento de Caracteres
 
-A função `limpar_nome_arquivo()` é aplicada a cada parte do nome de arquivo (`DECLARACAO`, `CLIENTE`, `NUMERO_PREGAO`). Ela substitui automaticamente caracteres problemáticos (como `/`, `\` e `.`) por *underscore* (`_`), garantindo nomes de arquivo válidos em qualquer sistema operacional.
+A função `limpar_nome_arquivo()` é aplicada a cada parte do nome de arquivo (`DOCUMENTO`, `CLIENTE`, `NUMERO_PREGAO`). Ela substitui automaticamente caracteres problemáticos (como `/`, `\` e `.`) por *underscore* (`_`), garantindo nomes de arquivo válidos em qualquer sistema operacional.
 
 **Regras Específicas:**
 
