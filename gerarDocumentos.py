@@ -15,15 +15,39 @@ import warnings
 # mantendo o console mais limpo.
 warnings.filterwarnings("ignore", category=UserWarning)
 
-# --- Variáveis de Configuração (Constantes) ---
+# ==============================================================================================
+# === FUNÇÃO AUXILIAR PARA COMPATIBILIDADE COM PYINSTALLER (Adicionada) ===
+# ==============================================================================================
+
+def resource_path(relative_path):
+    """ 
+    Obtém o caminho absoluto para o recurso empacotado, seja no ambiente de desenvolvimento 
+    ou dentro do executável PyInstaller. 
+    """
+    if getattr(sys, 'frozen', False):
+        # Estamos rodando como um executável PyInstaller. Caminho base é o diretório temporário.
+        base_path = sys._MEIPASS
+    else:
+        # Estamos rodando em modo normal (Python). Caminho base é o diretório do script.
+        base_path = os.path.dirname(os.path.abspath(__file__))
+
+    return os.path.join(base_path, relative_path)
+
+# ==============================================================================================
+# === Variáveis de Configuração (Constantes) - Caminhos AJUSTADOS ===
+# ==============================================================================================
 # Nome do arquivo Excel que contém os dados a serem preenchidos nos documentos
 NOME_PLANILHA = 'dados_documentos.xlsx'
 # Nome da pasta onde o arquivo Excel de dados está localizado
-PASTA_DADOS = 'dados'
+# >>> ALTERAÇÃO 1: Usa resource_path para ler a cópia empacotada no EXE
+PASTA_DADOS = resource_path('dados') 
 # Nome da pasta onde os modelos (templates) de documentos Word estão localizados
-PASTA_TEMPLATES = 'modelos'
-# Nome da pasta onde os documentos finais serão salvos
+# >>> ALTERAÇÃO 2: Usa resource_path para ler a cópia empacotada no EXE
+PASTA_TEMPLATES = resource_path('modelos') 
+# Nome da pasta onde os documentos finais serão salvos (DEVE ficar FORA do .exe)
+# >>> ALTERAÇÃO 3: Fica como caminho relativo normal para salvar no disco.
 PASTA_SAIDA = 'documentos_gerados'
+
 # Valor padrão usado para preencher células vazias na planilha ou novas colunas
 VALOR_PADRAO_VAZIO = 'N/A' 
 # Nome da coluna no Excel que especifica qual arquivo de modelo Word deve ser usado
@@ -40,12 +64,6 @@ COLUNA_NUMERO_PREGAO = 'NUMERO_PREGAO'
 def limpar_nome_arquivo(texto):
     """
     Função para limpar e formatar strings para que possam ser usadas como nomes de arquivos.
-    
-    Parâmetros:
-        texto (str): O texto original (e.g., nome do cliente, do documento).
-        
-    Retorno:
-        str: O texto limpo, sem caracteres inválidos e com espaços substituídos por underscores.
     """
     # Converte para string e remove espaços em branco no início e fim
     texto = str(texto).strip()
@@ -60,14 +78,7 @@ def limpar_nome_arquivo(texto):
 
 def extrair_variaveis_do_template(caminho_modelo):
     """
-    Função que abre um modelo Word e extrai todos os placeholders (variáveis de contexto)
-    que precisam ser preenchidos.
-    
-    Parâmetros:
-        caminho_modelo (str): Caminho completo para o arquivo .docx do modelo.
-        
-    Retorno:
-        set: Um conjunto de strings contendo os nomes das variáveis.
+    Função que abre um modelo Word e extrai todos os placeholders (variáveis de contexto).
     """
     try:
         # Cria um objeto DocxTemplate
@@ -76,7 +87,6 @@ def extrair_variaveis_do_template(caminho_modelo):
         context_placeholders = set(doc.get_undeclared_template_variables())
         
         # Filtra as variáveis para remover comandos Jinja2 (como 'tr', 'for', 'if', 'block')
-        # e manter apenas as variáveis de contexto reais (os placeholders de preenchimento).
         placeholders_filtrados = {
             var for var in context_placeholders 
             if not var.startswith(('tr', 'for', 'if', 'block'))
@@ -89,18 +99,11 @@ def extrair_variaveis_do_template(caminho_modelo):
 
 # --------------------------------------------------------------------------------------------------
 
-def checar_e_atualizar_colunas(df, caminho_planilha):
+def checar_e_atualizar_colunas(df, caminho_planilha_disco):
     """
     Verifica se todas as variáveis encontradas em TODOS os modelos Word existem como colunas
     no DataFrame (planilha Excel). Se novas variáveis forem encontradas, elas são adicionadas
-    ao DataFrame e a planilha é salva com as novas colunas preenchidas com VALOR_PADRAO_VAZIO.
-    
-    Parâmetros:
-        df (pd.DataFrame): O DataFrame lido da planilha Excel.
-        caminho_planilha (str): O caminho completo para o arquivo Excel.
-        
-    Retorno:
-        bool: True se o DataFrame/planilha foi modificado (novas colunas adicionadas), False caso contrário.
+    ao DataFrame e a planilha é salva no CAMINHO DO DISCO (caminho_planilha_disco).
     """
     print("\n🔍 Iniciando checagem de variáveis dos templates vs. Planilha...")
     # Obtém um conjunto com todos os nomes de colunas atuais no DataFrame
@@ -123,7 +126,6 @@ def checar_e_atualizar_colunas(df, caminho_planilha):
 
     # Lógica para atualização da planilha
     if novas_variaveis_encontradas:
-        # ... (Impressão de avisos no console) ...
         print("-" * 60)
         print(f"⚠️ **ATENÇÃO: NOVAS VARIÁVEIS ENCONTRADAS**")
         print("As seguintes variáveis foram encontradas nos templates, mas não existem como colunas na planilha:")
@@ -136,13 +138,13 @@ def checar_e_atualizar_colunas(df, caminho_planilha):
             df[nova_coluna] = VALOR_PADRAO_VAZIO
             
         try:
-            # Salva o DataFrame atualizado de volta no arquivo Excel
-            df.to_excel(caminho_planilha, index=False, engine='openpyxl')
-            print(f"💾 Planilha '{NOME_PLANILHA}' atualizada com sucesso.")
+            # Salva o DataFrame atualizado de volta no arquivo Excel NO DISCO
+            df.to_excel(caminho_planilha_disco, index=False, engine='openpyxl')
+            print(f"💾 Planilha '{NOME_PLANILHA}' atualizada com sucesso no disco.")
             return True # Retorna True indicando que a planilha foi modificada
         except Exception as e:
             # Em caso de erro ao salvar (ex: arquivo aberto por outro programa)
-            print(f"❌ ERRO CRÍTICO ao salvar a planilha Excel: {e}")
+            print(f"❌ ERRO CRÍTICO ao salvar a planilha Excel no disco: {e}")
             print("Verifique se o arquivo Excel não está aberto por outro programa.")
             sys.exit(1) # Sai do programa
     else:
@@ -158,30 +160,50 @@ def gerar_documentos():
     print("🚀 Iniciando a Automação de Geração de Documentos (Múltiplos Modelos)...")
     print("-" * 60)
 
-    # Constrói o caminho completo para a planilha de dados
-    caminho_planilha = os.path.join(PASTA_DADOS, NOME_PLANILHA)
-    # Cria a pasta de saída se ela não existir (exist_ok=True evita erro se já existir)
-    os.makedirs(PASTA_SAIDA, exist_ok=True)
+    # Constrói o caminho do arquivo Excel no DISCO (onde o usuário edita e salva)
+    caminho_planilha_disco = os.path.join('..', 'dados', NOME_PLANILHA)
+    
+    # Constrói o caminho do arquivo Excel para LEITURA (no local TEMPORÁRIO do PyInstaller)
+    # Este é o backup da planilha original.
+    caminho_planilha_leitura_backup = os.path.join(PASTA_DADOS, NOME_PLANILHA) 
 
+    # Cria a pasta de saída se ela não existir
+    os.makedirs(PASTA_SAIDA, exist_ok=True)
+    
     # --- Leitura e Preparação Inicial do DataFrame ---
     try:
-        # Lê o arquivo Excel, e preenche todos os valores NaN (vazios) com VALOR_PADRAO_VAZIO
-        df = pd.read_excel(caminho_planilha).fillna(VALOR_PADRAO_VAZIO)
+        # TENTA LER O ARQUIVO NO DISCO (onde o usuário preenche os dados)
+        df = pd.read_excel(caminho_planilha_disco).fillna(VALOR_PADRAO_VAZIO)
     except FileNotFoundError:
-        # Trata o erro de arquivo de dados não encontrado
-        print(f"❌ ERRO CRÍTICO: Arquivo de dados '{caminho_planilha}' não encontrado.")
-        sys.exit(1)
+        # Se for a primeira execução e o arquivo não existe no disco:
+        print(f"⚠️ A planilha de dados não foi encontrada no disco original: '{caminho_planilha_disco}'.")
+        try:
+            # LÊ O ARQUIVO EMPACOTADO (o backup)
+            print(f"  Tentando ler a versão empacotada...")
+            df = pd.read_excel(caminho_planilha_leitura_backup).fillna(VALOR_PADRAO_VAZIO)
+            
+            # Garante que a pasta 'dados' existe no disco, se não existir
+            os.makedirs(os.path.dirname(caminho_planilha_disco), exist_ok=True)
+            
+            # COPIA a estrutura lida do backup para o disco, para que o usuário possa editar
+            df.to_excel(caminho_planilha_disco, index=False, engine='openpyxl')
+            print(f"💾 O arquivo foi copiado para o disco para edição: '{caminho_planilha_disco}'.")
+        except Exception as e:
+            # Trata o erro de backup ou erro ao salvar a cópia inicial
+            print(f"❌ ERRO CRÍTICO ao ler ou copiar a planilha: {e}")
+            sys.exit(1)
     except Exception as e:
-        # Trata outros erros de leitura do Excel
-        print(f"❌ ERRO ao ler a planilha Excel: {e}")
+        # Trata outros erros de leitura do Excel (ex: arquivo aberto)
+        print(f"❌ ERRO ao ler a planilha Excel do disco: {e}")
         sys.exit(1)
 
     # --- Sincronização de Colunas ---
-    df_foi_modificado = checar_e_atualizar_colunas(df, caminho_planilha)
+    # A variável 'df' AGORA contém os dados lidos do DISCO (ou a cópia inicial no 1º run).
+    df_foi_modificado = checar_e_atualizar_colunas(df, caminho_planilha_disco)
     
     if df_foi_modificado:
         # Se a planilha foi modificada (novas colunas adicionadas), o script para
-        print("\n🛑 POR FAVOR: Preencha os novos campos adicionados na planilha Excel antes de executar novamente.")
+        print("\n🛑 POR FAVOR: Preencha os novos campos adicionados na planilha Excel ANTES de executar novamente.")
         return # Termina a execução da função principal
     
     # --- Limpeza do DataFrame ---
@@ -220,6 +242,7 @@ def gerar_documentos():
         # 2. Constrói o caminho completo para o modelo
         # Substitui barras (para suportar subpastas no nome do template) pelo separador de caminho do SO
         nome_template_tratado = nome_template_completo.replace('/', os.sep).replace('\\', os.sep)
+        # PASTA_TEMPLATES já é o caminho PyInstaller/_MEIPASS/modelos
         caminho_template_completo = os.path.join(PASTA_TEMPLATES, nome_template_tratado)
         
         # 3. Processamento do Documento
