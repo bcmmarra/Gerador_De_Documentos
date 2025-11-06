@@ -207,6 +207,7 @@ def gerar_documentos():
     if df_foi_modificado:
         # Se a planilha foi modificada (novas colunas adicionadas), o script para
         print("\n🛑 POR FAVOR: Preencha os novos campos adicionados na planilha Excel ANTES de executar novamente.")
+        input("\nPressione ENTER para fechar e continuar (depois de preencher o Excel).")
         return # Termina a execução da função principal
     
     # --- Limpeza do DataFrame ---
@@ -297,6 +298,7 @@ def gerar_documentos():
     print(f"🎉 Automação Concluída!")
     print(f"{contador} documentos gerados com sucesso na pasta '{PASTA_SAIDA}'.")
     
+    input("\nPressione ENTER para fechar a janela.")
     
 if __name__ == "__main__":
     # Chama a função principal
