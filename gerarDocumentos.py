@@ -180,9 +180,6 @@ def gerar_documentos():
         # Se for a primeira execução e o arquivo não existe no disco:
         print(f"⚠️ A planilha de dados não foi encontrada no disco original. Tentando ler backup...")
         try:
-            # LÊ O ARQUIVO EMPACOTADO (o backup)
-            df = pd.read_excel(caminho_planilha_leitura_backup).fillna(VALOR_PADRAO_VAZIO)
-            
             # Garante que a pasta 'dados' existe no disco
             os.makedirs(os.path.dirname(caminho_planilha_disco), exist_ok=True)
             
